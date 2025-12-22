@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+/* Global default font */
+html {
+  font-family: "Google Sans Flex", Inter, Roboto, system-ui, sans-serif;
+}
+
+
