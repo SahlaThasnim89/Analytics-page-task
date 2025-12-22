@@ -38,13 +38,10 @@ const defaultAreaData = [
 export function Analysis() {
   const [email, setEmail] = useState("");
   const [previousValues, setPreviousValues] = useState<any>(null);
-  const [showOverwrite, setShowOverwrite] = useState(false);
   const [chartData, setChartData] = useState(defaultAreaData);
   const [showNewAlert, setShowNewAlert] = useState(false);
   const [showOverwriteAlert, setShowOverwriteAlert] = useState(false);
-  const [canEditChart, setCanEditChart] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showAnalyticsForm, setShowAnalyticsForm] = useState(false);
 
   const [open, setOpen] = useState(false);
@@ -52,50 +49,34 @@ export function Analysis() {
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-
-  const { data, error } = await supabase
-    .from("chart_overrides")
-    .select("values")
-    .eq("email", email)
-    .eq("chart_type", "area")
-    .maybeSingle();
+      const { data, error } = await supabase
+        .from("chart_overrides")
+        .select("values")
+        .eq("email", email)
+        .eq("chart_type", "area")
+        .maybeSingle();
 
       if (error) {
         console.error("❌ Supabase error:", error.message);
         return;
       }
 
-      
-  if (data?.values) {
-    setPreviousValues(data.values);
-    setChartData(data.values);
-    setCanEditChart(false);
-    setShowOverwriteAlert(true);
-  } else {
-    setCanEditChart(true);
-    setShowAnalyticsForm(true);
-  }
-
       if (data) {
         setPreviousValues(data.values);
-        setShowOverwrite(true);
+        setChartData(data.values);
+        setShowOverwriteAlert(true);
         setShowOverwriteAlert(true);
       } else {
-        setShowOverwrite(false);
         setShowNewAlert(true);
       }
     } catch (err) {
       console.error("🔥 Unexpected error:", err);
     }
-
   };
-
-
 
   const handleAllowAnalysis = () => {
     setShowForm(true);
     console.log(showForm);
-    setError(null);
   };
 
   useEffect(() => {
@@ -154,9 +135,10 @@ export function Analysis() {
                     <Dialog open={open} onOpenChange={setOpen}>
                       <DialogTrigger asChild>
                         <Button
-                        variant="outline"
-                            size="lg"
-                         className="text-white rounded-full h-16 px-8 text-md cursor-pointer bg-violet-500 text-[16px] hover:text-[#FFFFFF] hover:border-2 hover:bg-transparent hover:border-amber-50">
+                          variant="outline"
+                          size="lg"
+                          className="text-white rounded-full h-16 px-8 text-md cursor-pointer bg-violet-500 text-[16px] hover:text-[#FFFFFF] hover:border-2 hover:bg-transparent hover:border-amber-50"
+                        >
                           Edit chart Data
                         </Button>
                       </DialogTrigger>
@@ -296,7 +278,7 @@ export function Analysis() {
         onOpenChange={setShowOverwriteAlert}
         onConfirm={() => {
           setChartData(previousValues);
-          setCanEditChart(true);
+        //   setCanEditChart(true);
           handleAllowAnalysis();
           setShowAnalyticsForm(true);
         }}
@@ -306,7 +288,6 @@ export function Analysis() {
         open={showNewAlert}
         onOpenChange={setShowNewAlert}
         onConfirm={() => {
-          setCanEditChart(true);
           handleAllowAnalysis();
           setShowAnalyticsForm(true);
         }}

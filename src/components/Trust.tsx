@@ -1,6 +1,6 @@
 
 
-export function Trusted() {
+export function Trust() {
   return (
     <section className="py-16 px-20 bg-gray-900">
         <div className="flex flex-col gap-20">
