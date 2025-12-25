@@ -8,6 +8,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
+import type { BrowserKey } from "./PieAnalyticsFormDialog"
 
 export const description = "A donut chart"
 
@@ -19,7 +20,8 @@ const chartData = [
   { browser: "other", visitors: 90, fill: "var(--color-other)" },
 ]
 
-const chartConfig = {
+const chartConfig: ChartConfig & Record<BrowserKey, { label: string; color: string }> = {
+
   visitors: {
     label: "Visitors",
   },
@@ -45,7 +47,23 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function ChartPieDonut() {
+
+
+
+export type PieDatum = {
+  browser: BrowserKey;
+  visitors: number;
+};
+
+
+export function ChartPieDonut({ pieData }: { pieData: PieDatum[] }) {
+
+  const pieWithColors = pieData.map((item: any) => ({
+  ...item,
+  fill: chartConfig[item.browser]?.color,
+}));
+
+
   return (
 <>
         <ChartContainer
@@ -58,7 +76,7 @@ export function ChartPieDonut() {
               content={<ChartTooltipContent hideLabel />}
             />
             <Pie
-              data={chartData}
+              data={pieWithColors}
               dataKey="visitors"
               nameKey="browser"
               innerRadius={80}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,8 +15,8 @@ import { supabase } from "../lib/supabaseClient";
 type AnalyticsFormDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-//   onApply: (data: any) => void;
-    email: string;
+  email: string;
+  initialValues?: any;
   onSaved: (data: any) => void;
 };
 
@@ -26,15 +26,19 @@ const MONTHS = [
 ] as const;
 
 type MonthKey = Lowercase<typeof MONTHS[number]>;
+const emptyValues = () =>
+  Object.fromEntries(
+    MONTHS.map((m) => [m.toLowerCase(), ""])
+  ) as Record<MonthKey, string>;
+
 
 export function AnalyticsFormDialog({
   open,
   onOpenChange,
-  email,onSaved
+  email,onSaved, initialValues
 }: AnalyticsFormDialogProps) {
-  const [values, setValues] = useState<Record<MonthKey, string>>(
-    Object.fromEntries(MONTHS.map(m => [m.toLowerCase(), ""])) as Record<MonthKey, string>
-  );
+const [values, setValues] = useState<Record<MonthKey, string>>(emptyValues());
+
 
   const [error, setError] = useState<string | null>(null);
 
@@ -90,6 +94,30 @@ const { error } = await supabase
 
     onOpenChange(false);
   };
+
+useEffect(() => {
+  if (!open) return;
+
+  // Overwrite case → populate inputs
+  if (initialValues?.length) {
+    const hydrated = Object.fromEntries(
+      initialValues.map((item: any) => [
+        item.month.toLowerCase(),
+        String(item.desktop),
+      ])
+    ) as Record<MonthKey, string>;
+
+    setValues(hydrated);
+  } 
+  // New user → empty form
+  else {
+    setValues(emptyValues());
+  }
+
+  setError(null);
+}, [open, initialValues]);
+
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

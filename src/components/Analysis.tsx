@@ -19,6 +19,7 @@ import { supabase } from "../lib/supabaseClient";
 import { AlertDialogDemo } from "./AlertDialog";
 import { NewUserAlert } from "./NewUserAlert";
 import { AnalyticsFormDialog } from "./AnalyticsForm";
+import { PieAnalyticsFormDialog } from "./PieAnalyticsFormDialog";
 
 const defaultAreaData = [
   { month: "January", desktop: 186 },
@@ -35,31 +36,50 @@ const defaultAreaData = [
   { month: "December", desktop: 214 },
 ];
 
+const defaultPieData = [
+  { browser: "chrome", visitors: 275, fill: "var(--color-chrome)" },
+  { browser: "safari", visitors: 200, fill: "var(--color-safari)" },
+  { browser: "firefox", visitors: 187, fill: "var(--color-firefox)" },
+  { browser: "edge", visitors: 173, fill: "var(--color-edge)" },
+  { browser: "other", visitors: 90, fill: "var(--color-other)" },
+];
+
 export function Analysis() {
-  const [email, setEmail] = useState("");
-  const [previousValues, setPreviousValues] = useState<any>(null);
   const [chartData, setChartData] = useState(defaultAreaData);
-  const [showNewAlert, setShowNewAlert] = useState(false);
-  const [showOverwriteAlert, setShowOverwriteAlert] = useState(false);
-  const [showForm, setShowForm] = useState(false);
+  const [pieData, setPieData] = useState(defaultPieData);
+
   const [showAnalyticsForm, setShowAnalyticsForm] = useState(false);
 
   const [open, setOpen] = useState(false);
+  const [pieDialogOpen, setPieDialogOpen] = useState(false);
+
+  // AREA
+  const [email, setEmail] = useState("");
+  const [previousValues, setPreviousValues] = useState<any>(null);
+  const [showNewAlert, setShowNewAlert] = useState(false);
+  const [showOverwriteAlert, setShowOverwriteAlert] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+
+  // PIE
+  const [pieEmail, setPieEmail] = useState("");
+  const [piePrev, setPiePrev] = useState<any>(null);
+  const [showPieOverwrite, setShowPieOverwrite] = useState(false);
+  const [showPieNewUser, setShowPieNewUser] = useState(false);
+  const [showPieForm, setShowPieForm] = useState(false);
+
+  async function checkChart(email: string, type: "area" | "pie") {
+    return supabase
+      .from("chart_overrides")
+      .select("values")
+      .eq("email", email)
+      .eq("chart_type", type)
+      .maybeSingle();
+  }
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { data, error } = await supabase
-        .from("chart_overrides")
-        .select("values")
-        .eq("email", email)
-        .eq("chart_type", "area")
-        .maybeSingle();
-
-      if (error) {
-        console.error("❌ Supabase error:", error.message);
-        return;
-      }
+      const { data } = await checkChart(email, "area");
 
       if (data) {
         setPreviousValues(data.values);
@@ -67,6 +87,8 @@ export function Analysis() {
         setShowOverwriteAlert(true);
         setShowOverwriteAlert(true);
       } else {
+        setPreviousValues(null);
+        setChartData(defaultAreaData);
         setShowNewAlert(true);
       }
     } catch (err) {
@@ -74,9 +96,37 @@ export function Analysis() {
     }
   };
 
+  const handlePieEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const { data } = await checkChart(pieEmail, "pie");
+
+    if (data) {
+      setPiePrev(data.values);
+      setPieData(data.values);
+      setShowPieOverwrite(true);
+    } else {
+      setPiePrev(null); // clear previous data
+      setPieData(defaultPieData);
+      setShowPieNewUser(true);
+    }
+  };
+
   const handleAllowAnalysis = () => {
     setShowForm(true);
+  };
+
+  const handleAllowPieAnalysis = () => {
+    setShowPieForm(true);
     console.log(showForm);
+  };
+
+  const handleOverwriteClose = (open: boolean) => {
+    setShowOverwriteAlert(open);
+
+    if (!open) {
+      setShowAnalyticsForm(true);
+    }
   };
 
   useEffect(() => {
@@ -198,63 +248,71 @@ export function Analysis() {
                       you identify patterns, anomalies, and performance shifts
                       across time without leaving the dashboard.
                     </p>
-                    <Dialog>
-                      <form>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="lg"
-                            className="text-white rounded-full h-16 px-8 text-md cursor-pointer bg-violet-500 text-[16px] hover:text-[#FFFFFF] hover:border-2 hover:bg-transparent hover:border-amber-50"
-                          >
-                            Edit chart Data
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-131.25 bg-gray-800 border border-gray-600 p-12 text-white rounded-xl">
-                          <DialogHeader>
-                            <DialogTitle className="text-lg font-semibold">
-                              Enter Email
-                            </DialogTitle>
-                            <DialogDescription className="text-gray-400">
-                              Enter you email here. Click save when you're done.
-                            </DialogDescription>
-                          </DialogHeader>
+                    <Dialog
+                      open={pieDialogOpen}
+                      onOpenChange={setPieDialogOpen}
+                    >
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          className="text-white rounded-full h-16 px-8 text-md cursor-pointer bg-violet-500 text-[16px] hover:text-[#FFFFFF] hover:border-2 hover:bg-transparent hover:border-amber-50"
+                        >
+                          Edit chart Data
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-131.25 bg-gray-800 border border-gray-600 p-12 text-white rounded-xl">
+                        <DialogHeader>
+                          <DialogTitle className="text-lg font-semibold">
+                            Enter Email
+                          </DialogTitle>
+                          <DialogDescription className="text-gray-400">
+                            Enter you email here. Click save when you're done.
+                          </DialogDescription>
+                        </DialogHeader>
 
-                          <form className="grid gap-6">
-                            <div className="grid gap-2">
-                              <Label htmlFor="email" className="text-sm">
-                                Email
-                              </Label>
-                              <Input
-                                id="email"
-                                name="email"
-                                type="email"
-                                placeholder="you@example.com"
-                                className="rounded-md bg-gray-900 border-gray-700 text-white placeholder:text-gray-500 focus:ring-2 focus:ring-violet-500"
-                                required
-                              />
-                            </div>
+                        <form
+                          className="grid gap-6"
+                          onSubmit={async (e) => {
+                            await handlePieEmailSubmit(e);
+                            setPieDialogOpen(false);
+                          }}
+                        >
+                          <div className="grid gap-2">
+                            <Label htmlFor="email" className="text-sm">
+                              Email
+                            </Label>
+                            <Input
+                              id="email"
+                              name="email"
+                              type="email"
+                              value={pieEmail}
+                              onChange={(e) => setPieEmail(e.target.value)}
+                              className="rounded-md bg-gray-900 border-gray-700 text-white placeholder:text-gray-500 focus:ring-2 focus:ring-violet-500"
+                              required
+                            />
+                          </div>
 
-                            <DialogFooter className="gap-2">
-                              <DialogClose asChild>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  className="rounded-md border-gray-600 text-white hover:bg-gray-700"
-                                >
-                                  Cancel
-                                </Button>
-                              </DialogClose>
-
+                          <DialogFooter className="gap-2">
+                            <DialogClose asChild>
                               <Button
-                                type="submit"
-                                className="rounded-md bg-violet-600 hover:bg-violet-700 text-white"
+                                type="button"
+                                variant="outline"
+                                className="rounded-md border-gray-600 text-white hover:bg-gray-700"
                               >
-                                Submit
+                                Cancel
                               </Button>
-                            </DialogFooter>
-                          </form>
-                        </DialogContent>
-                      </form>
+                            </DialogClose>
+
+                            <Button
+                              type="submit"
+                              className="rounded-md bg-violet-600 hover:bg-violet-700 text-white"
+                            >
+                              Submit
+                            </Button>
+                          </DialogFooter>
+                        </form>
+                      </DialogContent>
                     </Dialog>
                   </div>
                   <Card className="w-full rounded-4xl border border-gray-600 p-12 bg-gray-800 text-start">
@@ -264,7 +322,7 @@ export function Analysis() {
                     <h3 className="text-[24px] mt-4 mb-6 font-semibold text-white">
                       You're flying blind in production.
                     </h3>
-                    <ChartPieDonut />
+                    <ChartPieDonut pieData={pieData} />
                   </Card>
                 </div>
               </div>
@@ -278,7 +336,7 @@ export function Analysis() {
         onOpenChange={setShowOverwriteAlert}
         onConfirm={() => {
           setChartData(previousValues);
-        //   setCanEditChart(true);
+          //   setCanEditChart(true);
           handleAllowAnalysis();
           setShowAnalyticsForm(true);
         }}
@@ -297,9 +355,38 @@ export function Analysis() {
         open={showAnalyticsForm}
         onOpenChange={setShowAnalyticsForm}
         email={email}
+        initialValues={previousValues}
         onSaved={(newData) => {
           setChartData(newData);
         }}
+      />
+
+      {/* PIE */}
+      <AlertDialogDemo
+        open={showPieOverwrite}
+        onOpenChange={setShowPieOverwrite}
+        onConfirm={() => {
+          setShowPieForm(true);
+        }}
+      />
+
+      <NewUserAlert
+        open={showPieNewUser}
+        onOpenChange={setShowPieNewUser}
+        onConfirm={() => {
+          handleAllowAnalysis();
+          setShowPieForm(true);
+        }}
+      />
+
+      <PieAnalyticsFormDialog
+        open={showPieForm}
+        onOpenChange={setShowPieForm}
+        initialValues={piePrev}
+        onSaved={(newData) => {
+          setPieData(newData);
+        }}
+        email={pieEmail}
       />
     </>
   );
