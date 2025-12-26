@@ -19,7 +19,7 @@ import { supabase } from "../lib/supabaseClient";
 import { AlertDialogDemo } from "./AlertDialog";
 import { NewUserAlert } from "./NewUserAlert";
 import { AnalyticsFormDialog } from "./AnalyticsForm";
-import { PieAnalyticsFormDialog } from "./PieAnalyticsFormDialog";
+import { PieAnalyticsFormDialog} from "./PieAnalyticsFormDialog";
 
 const defaultAreaData = [
   { month: "January", desktop: 186 },
@@ -43,6 +43,7 @@ const defaultPieData = [
   { browser: "edge", visitors: 173, fill: "var(--color-edge)" },
   { browser: "other", visitors: 90, fill: "var(--color-other)" },
 ];
+
 
 export function Analysis() {
   const [chartData, setChartData] = useState(defaultAreaData);
@@ -116,18 +117,7 @@ export function Analysis() {
     setShowForm(true);
   };
 
-  const handleAllowPieAnalysis = () => {
-    setShowPieForm(true);
-    console.log(showForm);
-  };
 
-  const handleOverwriteClose = (open: boolean) => {
-    setShowOverwriteAlert(open);
-
-    if (!open) {
-      setShowAnalyticsForm(true);
-    }
-  };
 
   useEffect(() => {
     console.log("showForm changed:", showForm);

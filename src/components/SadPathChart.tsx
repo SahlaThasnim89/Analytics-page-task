@@ -50,10 +50,11 @@ const chartConfig: ChartConfig & Record<BrowserKey, { label: string; color: stri
 
 
 
-export type PieDatum = {
-  browser: BrowserKey;
+interface PieDatum {
+  browser: string;
   visitors: number;
-};
+  fill: string;
+}
 
 
 export function ChartPieDonut({ pieData }: { pieData: PieDatum[] }) {
