@@ -9,6 +9,7 @@ import {
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { useEffect, useState } from "react";
+import { defaultPieData } from "./Analysis";
 
 const BROWSERS = ["chrome", "safari", "firefox", "edge", "other"] as const;
 
@@ -38,6 +39,16 @@ export function PieAnalyticsFormDialog({
   );
   const [error, setError] = useState<string>("");
 
+
+  const defaultPieValues = () =>
+  Object.fromEntries(
+    BROWSERS.map((b) => {
+      const found = defaultPieData.find(d => d.browser === b)
+      return [b, found ? String(found.visitors) : ""]
+    })
+  ) as Record<BrowserKey, string>;
+
+
   useEffect(() => {
     if (!open) return;
 
@@ -48,7 +59,7 @@ export function PieAnalyticsFormDialog({
 
       setValues(hydrated);
     } else {
-      setValues(emptyValues());
+      setValues(defaultPieValues());
     }
   }, [open, initialValues]);
 

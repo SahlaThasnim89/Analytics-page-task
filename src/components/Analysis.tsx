@@ -21,7 +21,7 @@ import { NewUserAlert } from "./NewUserAlert";
 import { AnalyticsFormDialog } from "./AnalyticsForm";
 import { PieAnalyticsFormDialog} from "./PieAnalyticsFormDialog";
 
-const defaultAreaData = [
+export const defaultAreaData = [
   { month: "January", desktop: 186 },
   { month: "February", desktop: 305 },
   { month: "March", desktop: 237 },
@@ -36,7 +36,7 @@ const defaultAreaData = [
   { month: "December", desktop: 214 },
 ];
 
-const defaultPieData = [
+export const defaultPieData = [
   { browser: "chrome", visitors: 275, fill: "var(--color-chrome)" },
   { browser: "safari", visitors: 200, fill: "var(--color-safari)" },
   { browser: "firefox", visitors: 187, fill: "var(--color-firefox)" },

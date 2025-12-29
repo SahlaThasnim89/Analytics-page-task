@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "../lib/supabaseClient";
-
+import { defaultAreaData } from "./Analysis";
 
 type AnalyticsFormDialogProps = {
   open: boolean;
@@ -21,24 +21,35 @@ type AnalyticsFormDialogProps = {
 };
 
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ] as const;
 
-type MonthKey = Lowercase<typeof MONTHS[number]>;
+type MonthKey = Lowercase<(typeof MONTHS)[number]>;
 const emptyValues = () =>
-  Object.fromEntries(
-    MONTHS.map((m) => [m.toLowerCase(), ""])
-  ) as Record<MonthKey, string>;
-
+  Object.fromEntries(MONTHS.map((m) => [m.toLowerCase(), ""])) as Record<
+    MonthKey,
+    string
+  >;
 
 export function AnalyticsFormDialog({
   open,
   onOpenChange,
-  email,onSaved, initialValues
+  email,
+  onSaved,
+  initialValues,
 }: AnalyticsFormDialogProps) {
-const [values, setValues] = useState<Record<MonthKey, string>>(emptyValues());
-
+  const [values, setValues] = useState<Record<MonthKey, string>>(emptyValues());
 
   const [error, setError] = useState<string | null>(null);
 
@@ -61,63 +72,64 @@ const [values, setValues] = useState<Record<MonthKey, string>>(emptyValues());
     return true;
   };
 
-  const handleApply = async() => {
+  const handleApply = async () => {
     if (!validate()) return;
 
+    const payload = MONTHS.map((month) => ({
+      month,
+      desktop: Number(values[month.toLowerCase() as MonthKey]),
+    }));
 
-      const payload = MONTHS.map((month) => ({
-    month,
-    desktop: Number(values[month.toLowerCase() as MonthKey]),
-  }));
+    const { error } = await supabase.from("chart_overrides").upsert(
+      {
+        email,
+        chart_type: "area", // REQUIRED
+        values: payload,
+      },
+      {
+        onConflict: "email,chart_type",
+      }
+    );
 
-const { error } = await supabase
-  .from("chart_overrides")
-  .upsert(
-    {
-      email,
-      chart_type: "area", // REQUIRED
-      values: payload,
-    },
-    {
-      onConflict: "email,chart_type",
+    if (error) {
+      setError("Failed to save data");
+      return;
     }
-  );
-
-
-  if (error) {
-    setError("Failed to save data");
-    return;
-  }
 
     onSaved(payload);
-
 
     onOpenChange(false);
   };
 
-useEffect(() => {
-  if (!open) return;
-
-  // Overwrite case → populate inputs
-  if (initialValues?.length) {
-    const hydrated = Object.fromEntries(
-      initialValues.map((item: any) => [
-        item.month.toLowerCase(),
-        String(item.desktop),
-      ])
+  const defaultAreaValues = () =>
+    Object.fromEntries(
+      MONTHS.map((m) => {
+        const found = defaultAreaData.find((d) => d.month === m);
+        return [m.toLowerCase(), found ? String(found.desktop) : ""];
+      })
     ) as Record<MonthKey, string>;
 
-    setValues(hydrated);
-  } 
-  // New user → empty form
-  else {
-    setValues(emptyValues());
-  }
+  useEffect(() => {
+    if (!open) return;
 
-  setError(null);
-}, [open, initialValues]);
+    // Overwrite case → populate inputs
+    if (initialValues?.length) {
+      const hydrated = Object.fromEntries(
+        initialValues.map((item: any) => [
+          item.month.toLowerCase(),
+          String(item.desktop),
+        ])
+      ) as Record<MonthKey, string>;
 
+      setValues(hydrated);
+    }
+    // New user → empty form
+    else {
+      setValues(defaultAreaValues());
+    }
 
+    setError(null);
+  }, [open, initialValues]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -146,9 +158,7 @@ useEffect(() => {
           ))}
         </div>
 
-        {error && (
-          <p className="mt-2 text-sm text-red-500">{error}</p>
-        )}
+        {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
